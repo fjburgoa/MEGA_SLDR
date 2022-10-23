@@ -1,10 +1,9 @@
 #include <UTFT.h>
 #include <stdio.h>
-//#include <string.h>
 
 extern uint8_t SmallFont[];
 
-#define STRSIZE 1500
+#define STRSIZE 500
 
 char inputStringSerial1[STRSIZE] = {0};
 char LCDString[30]= {0};
@@ -34,17 +33,16 @@ void setup()
   Serial1.begin(115200);
  
   memset(inputStringSerial1,0,STRSIZE);
-  //memcpy(inputStringSerial1,"#\n461F9E S\n407D44 S    5417\n343650 S\n3C49EA S    4447 CFG9CA\n345543 S    6033 ANE26EA\n451D86 S    4417 TAP1020\n*\n",sizeof("#\n461F9E S\n407D44 S    5417\n343650 S\n3C49EA S    4447 CFG9CA\n345543 S    6033 ANE26EA\n451D86 S    4417 TAP1020\n*\n"));
- 
-
   Serial.print("RESET\r\n");
 }
 
 int j=0;
 void loop() 
 {
-    if (cmd_rcv==true)
+    //si se ha terminado de recibir un comando
+    if (cmd_rcv==true)   
     { 
+      myGLCD.clrScr();
       cmd_rcv = false;
       
       for (int i=0; i<14; i++)
@@ -82,8 +80,6 @@ void loop()
           memset(LCDString,' ',30);      
 
         }
-         
-
       }
 
       indx = 0;
@@ -91,15 +87,11 @@ void loop()
       memset(inputStringSerial1,0,STRSIZE);
       memset(LCDString,' ',30);
       j =0 ;
-
-
+      
     }
-
+    
 }
- 
-
-
- 
+  
 //puerto con el PC 
 void serialEvent() 
 {
@@ -107,13 +99,11 @@ void serialEvent()
     Serial1.print(inChar);    
 }
 
-
 //puerto con el RBPI 
 void serialEvent1() 
 {
     inChar = (char)Serial1.read();    
     Serial.print(inChar);
-    
 
     if (inChar == '*')
     {
