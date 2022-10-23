@@ -3,16 +3,17 @@
 
 extern uint8_t SmallFont[];
 
-#define STRSIZE 500
+#define STRSIZE   750
+#define  LENX      35
 
 char inputStringSerial1[STRSIZE] = {0};
-char LCDString[30]= {0};
+char LCDString[LENX]= {0};
 
-char indx1   = 0;
+int  indx1   = 0;
 bool cmd_rcv = false;
 char inChar  = 0;
 
-int d=0;
+int d   = 0; //número de letras entre cada salto
 int indx= 0;
 char* start;
 char* end;
@@ -36,7 +37,10 @@ void setup()
   Serial.print("RESET\r\n");
 }
 
-int j=0;
+int j=0; //fila
+
+char longitud[10]= {0};
+
 void loop() 
 {
     //si se ha terminado de recibir un comando
@@ -45,48 +49,69 @@ void loop()
       myGLCD.clrScr();
       cmd_rcv = false;
       
-      for (int i=0; i<14; i++)
+      for (int i=0; i<25; i++)
       {
         end   = inputStringSerial1+indx;
         start = strchr(inputStringSerial1+indx,'\n');
-        if (start>0)
+        if (start>0)   //si se ha encontrado '\n'
         {
           d = start-end;
-          if (d>30)
-             d = 30;
+          if (d>LENX)
+             d = LENX;
           
           *start = ' ';
 
           memcpy(LCDString,inputStringSerial1+indx,d);
   
-          if (! (strchr(LCDString,'#')>0))
+          if (!(strchr(LCDString,'#')>0) &&  !(strchr(LCDString,'\t')>0) /* &&  !(strchr(LCDString,'*')>0)  &&  !(strchr(LCDString,'[')>0) */)
           {
             char* a = strchr(LCDString,'\r');
             if (a > 0)
               *a = 0;
             
-            myGLCD.print(LCDString,0,j*10);j++;
+            /*aquí gestiona la información*/         
+
+            char* aa = strchr(LCDString,'.');
+            if (*(aa-1) == ' ')
+            {
+               memcpy(longitud,aa-1,6);
+            }
+            else if (*(aa-2) == ' ')
+            {
+              memcpy(longitud,aa-2,7);   
+            }
+            else if (*(aa-3) == ' ')
+            {
+              memcpy(longitud,aa-3,9);    
+            }
+            
+            myGLCD.print(LCDString,0,j*10); j++;
+            
+            if (aa > 0)
+            {
+              //myGLCD.printNumF(atof(longitud),4,0,j*10); j++;
+              memset(longitud,0,10);    
+            }
+            
           }
-          memset(LCDString,' ',30);
+          memset(LCDString,0,LENX);
           indx+=d+1;
         }
-        
         else
         {
-          
           indx = 0;
           indx1= 0;
           memset(inputStringSerial1,0,STRSIZE);     
-          memset(LCDString,' ',30);      
-
+          memset(LCDString,0,LENX);      
         }
       }
 
       indx = 0;
-      indx1=0;
+      indx1= 0;
+      j    = 0;
       memset(inputStringSerial1,0,STRSIZE);
-      memset(LCDString,' ',30);
-      j =0 ;
+      memset(LCDString,0,LENX);
+      
       
     }
     
