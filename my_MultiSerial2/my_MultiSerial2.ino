@@ -24,17 +24,18 @@ void setup()
 {
   randomSeed(analogRead(0));
 
-  myGLCD.InitLCD();
-  myGLCD.setFont(SmallFont);
+ // myGLCD.InitLCD();
+ // myGLCD.setFont(SmallFont);
 
   myGLCD.clrScr();
 
   // initialize both serial ports:
-  Serial.begin(115200);
-  Serial1.begin(115200);
+  Serial3.begin(115200);  //PC
+  Serial2.begin(9600);    //GPS
+  Serial1.begin(115200);  //RBPI
  
   memset(inputStringSerial1,0,STRSIZE);
-  Serial.print("RESET\r\n");
+  Serial3.print("RESET\r\n");
 }
 
 int j=0; //fila
@@ -118,17 +119,26 @@ void loop()
 }
   
 //puerto con el PC 
-void serialEvent() 
+void serialEvent3() 
 {
-    inChar = (char)Serial.read();    
+    inChar = (char)Serial3.read();    
     Serial1.print(inChar);    
 }
+
+//puerto con el GPS 
+void serialEvent2() 
+{
+    inChar = (char)Serial2.read();    
+    Serial3.print(inChar);    
+    //Serial3.print("*");    
+}
+
 
 //puerto con el RBPI 
 void serialEvent1() 
 {
     inChar = (char)Serial1.read();    
-    Serial.print(inChar);
+    Serial3.print(inChar);
 
     if (inChar == '*')
     {
