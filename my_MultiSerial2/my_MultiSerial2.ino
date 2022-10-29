@@ -6,13 +6,15 @@ extern uint8_t SmallFont[];
 #define STRSIZE   750
 #define  LENX      35
 
-char inputStringSerial1[STRSIZE] = {0};
-char LCDString[LENX]= {0};
+char inputStringSerial1[STRSIZE] = {0}; //texto recibido de la Rasbpberry
+char LCDString[LENX]             = {0};         
 
-int  indx1   = 0;
+//gestión de los datos recibidos x raspberry
+int  indx1   = 0;   
 bool cmd_rcv = false;
 char inChar  = 0;
 
+//para gestionar los datos una vez recibidos y poder mostrarlos por pantalla TFT
 int d   = 0; //número de letras entre cada salto
 int indx= 0;
 char* start;
@@ -24,22 +26,21 @@ void setup()
 {
   randomSeed(analogRead(0));
 
- // myGLCD.InitLCD();
- // myGLCD.setFont(SmallFont);
+  myGLCD.InitLCD();
+  myGLCD.setFont(SmallFont);
 
   myGLCD.clrScr();
 
-  // initialize both serial ports:
-  Serial3.begin(115200);  //PC
-  Serial2.begin(9600);    //GPS
-  Serial1.begin(115200);  //RBPI
+  // initialize serial ports:
+  Serial3.begin(115200);  //MEGA <-> PC
+  Serial2.begin(9600);    //MEGA <-> GPS  
+  Serial1.begin(115200);  //MEGA <-> RBPI
  
   memset(inputStringSerial1,0,STRSIZE);
   Serial3.print("RESET\r\n");
 }
 
 int j=0; //fila
-
 char longitud[10]= {0};
 
 void loop() 
@@ -118,32 +119,31 @@ void loop()
     
 }
   
-//puerto con el PC 
+//recibe datos del PC PS3: MEGA <-> PC
 void serialEvent3() 
 {
     inChar = (char)Serial3.read();    
-    Serial1.print(inChar);    
+    Serial1.print(inChar);        //reenvía a Raspberry
 }
 
-//puerto con el GPS 
+//recibe datos del PC PS2: MEGA <-> GPS
 void serialEvent2() 
 {
     inChar = (char)Serial2.read();    
-    Serial3.print(inChar);    
+    Serial3.print(inChar);       //de momento que los envíe al PC
     //Serial3.print("*");    
 }
 
 
-//puerto con el RBPI 
+//recibe datos del PC PS2: MEGA <-> Raspberry
 void serialEvent1() 
 {
     inChar = (char)Serial1.read();    
-    Serial3.print(inChar);
+    Serial3.print(inChar);      //Reenvía al PC
 
-    if (inChar == '*')
-    {
+    if (inChar == '*')          //si recibe * es que ha terminado el envío de datos
       cmd_rcv = true;
-    }
+
     inputStringSerial1[indx1] = inChar;
     indx1++;
     if (indx1>STRSIZE-1)

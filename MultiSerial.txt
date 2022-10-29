@@ -1,1 +1,1 @@
-Use two of the serial ports available on the Arduino board.
+Use of serial ports 1,2 &3 available on the Arduino MEGA 2560 board.
