@@ -1,10 +1,13 @@
 #include <UTFT.h>
 #include <stdio.h>
 
+
 extern uint8_t SmallFont[];
 
-#define STRSIZE   750
-#define  LENX      35
+#define STRSIZE  750
+#define MAX_ROWS 10
+#define LENX     35
+
 
 char inputStringSerial1[STRSIZE] = {0}; //texto recibido de la Rasbpberry
 char LCDString[LENX]             = {0};         
@@ -20,7 +23,23 @@ int indx= 0;
 char* start;
 char* end;
 
+//estructura
+struct Aircraft
+{
+    char Id[7];
+    int  Alt;
+    int  Vel;
+    float lat;
+    float longit;
+    char row;
+};
+
+Aircraft aircft[MAX_ROWS] = { 0 };
+
+
 UTFT myGLCD(ITDB32S,38,39,40,41);
+
+int getData(char* mybuff, Aircraft* myaircraft);
 
 void setup() 
 {
@@ -41,7 +60,7 @@ void setup()
 }
 
 int j=0; //fila
-char longitud[10]= {0};
+char longitud[MAX_ROWS]= {0};
 
 void loop() 
 {
@@ -51,72 +70,31 @@ void loop()
       myGLCD.clrScr();
       cmd_rcv = false;
       
-      for (int i=0; i<25; i++)
+      if (getData(inputStringSerial1,aircft))
       {
-        end   = inputStringSerial1+indx;
-        start = strchr(inputStringSerial1+indx,'\n');
-        if (start>0)   //si se ha encontrado '\n'
+        for (int i=0; i<MAX_ROWS; i++)
         {
-          d = start-end;
-          if (d>LENX)
-             d = LENX;
-          
-          *start = ' ';
-
-          memcpy(LCDString,inputStringSerial1+indx,d);
-  
-          if (!(strchr(LCDString,'#')>0) &&  !(strchr(LCDString,'\t')>0) /* &&  !(strchr(LCDString,'*')>0)  &&  !(strchr(LCDString,'[')>0) */)
-          {
-            char* a = strchr(LCDString,'\r');
-            if (a > 0)
-              *a = 0;
-            
-            /*aquí gestiona la información*/         
-
-            char* aa = strchr(LCDString,'.');
-            if (*(aa-1) == ' ')
-            {
-               memcpy(longitud,aa-1,6);
-            }
-            else if (*(aa-2) == ' ')
-            {
-              memcpy(longitud,aa-2,7);   
-            }
-            else if (*(aa-3) == ' ')
-            {
-              memcpy(longitud,aa-3,9);    
-            }
-            
-            myGLCD.print(LCDString,0,j*10); j++;
-            
-            if (aa > 0)
-            {
-              //myGLCD.printNumF(atof(longitud),4,0,j*10); j++;
-              memset(longitud,0,10);    
-            }
-            
-          }
           memset(LCDString,0,LENX);
           indx+=d+1;
         }
-        else
-        {
+      }
+      else
+      {
           indx = 0;
           indx1= 0;
           memset(inputStringSerial1,0,STRSIZE);     
           memset(LCDString,0,LENX);      
-        }
       }
-
+    }
+    else
+    {
       indx = 0;
       indx1= 0;
       j    = 0;
       memset(inputStringSerial1,0,STRSIZE);
       memset(LCDString,0,LENX);
-      
-      
-    }
-    
+    }      
+
 }
   
 //recibe datos del PC PS3: MEGA <-> PC
@@ -151,5 +129,122 @@ void serialEvent1()
       indx1=0;
       memset(inputStringSerial1,0,STRSIZE);
     } 
+}
+
+
+// extract data from the buffer
+int getData(char* mybuff, Aircraft* myaircraft)
+{
+    char* ret;
+    ret = strchr(mybuff, '#');
+
+    if (ret)
+    {
+        memcpy(mybuff, mybuff + 2, STRSIZE-2);
+    }
+    else
+    {
+        return -1;
+    }
+
+    for (int j = 0; j < MAX_ROWS; j++)
+    {
+        char* char_a = strchr(mybuff, 'a');
+        char* char_b = strchr(mybuff, 'b');
+        char* char_c = strchr(mybuff, 'c');
+        char* char_d = strchr(mybuff, 'd');
+        char* char_e = strchr(mybuff, 'e');
+        char* char_r = strchr(mybuff, '\n');
+        char draft[10] = { 0 };
+        if (char_a)
+        {
+            //Id
+            memset(myaircraft[j].Id, 0, 7);
+            memcpy(myaircraft[j].Id, char_a + 1, char_b - char_a - 1);  
+            //ALT
+            memcpy(draft, char_b + 1, char_c - char_b - 1);
+            myaircraft[j].Alt = atoi(draft);
+            memset(draft, 0, 10);
+            //VEL
+            memcpy(draft, char_c + 1, char_d - char_c - 1);
+            myaircraft[j].Vel = atoi(draft);
+            memset(draft, 0, 10);
+            //LAT
+            memcpy(draft, char_d + 1, char_e - char_d - 1);
+            myaircraft[j].lat = atof(draft);
+            memset(draft, 0, 10);
+            //LONG
+            memcpy(draft, char_e + 1, char_r - char_e - 1);
+            myaircraft[j].longit = atof(draft);
+            memset(draft, 0, 10);
+
+            int d = char_r - char_a;
+            memcpy(mybuff, mybuff + d + 1, STRSIZE - d);
+        }
+        else
+        {
+          return 1;
+        }
+
+    }
+
+    return 2;
 
 }
+
+
+
+
+
+
+
+
+
+
+          //IMPRIME POR PANTALLA
+          
+          /*
+          end   = inputStringSerial1+indx;
+          start = strchr(inputStringSerial1+indx,'\n');
+          if (start>0)   //si se ha encontrado '\n'
+          {
+            d = start-end;
+            if (d>LENX)
+              d = LENX;
+            
+            *start = ' ';
+
+            memcpy(LCDString,inputStringSerial1+indx,d);
+    
+            if (!(strchr(LCDString,'#')>0) &&  !(strchr(LCDString,'\t')>0))
+            {
+              char* a = strchr(LCDString,'\r');
+              if (a > 0)
+                *a = 0;
+              
+              //aquí gestiona la información
+
+              char* aa = strchr(LCDString,'.');
+              if (*(aa-1) == ' ')
+              {
+                memcpy(longitud,aa-1,6);
+              }
+              else if (*(aa-2) == ' ')
+              {
+                memcpy(longitud,aa-2,7);   
+              }
+              else if (*(aa-3) == ' ')
+              {
+                memcpy(longitud,aa-3,9);    
+              }
+              
+              myGLCD.print(LCDString,0,j*10); j++;
+              
+              if (aa > 0)
+              {
+                //myGLCD.printNumF(atof(longitud),4,0,j*10); j++;
+                memset(longitud,0,10);    
+              }
+            }
+              */ 
+
